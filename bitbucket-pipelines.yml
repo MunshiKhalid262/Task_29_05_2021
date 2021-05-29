@@ -1,0 +1,27 @@
+# This is a sample build configuration for PHP.
+# Check our guides at https://confluence.atlassian.com/x/e8YWN for more examples.
+# Only use spaces to indent your .yml configuration.
+# -----
+# You can specify a custom docker image from Docker Hub as your build environment.
+image: php:7.2
+
+pipelines:
+  branches:
+    master:
+      - step:
+          caches:
+            - composer
+          script:
+            - apt-get update && apt-get install -y unzip
+            - apt-get install -y openssh-client
+            - touch randomtext.txt
+            - echo "$BITBUCKET_BRANCH" > randomtext.txt
+            - curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+            - composer install
+            - tar -czf /tmp/$BITBUCKET_BRANCH.tar.gz .
+            - ssh root@37.46.85.244 'bash -s' < execute.sh
+            - scp /tmp/$BITBUCKET_BRANCH.tar.gz root@37.46.85.244:/home/test-project/config/$BITBUCKET_BRANCH.tar.gz
+            - scp randomtext.txt root@37.46.85.244:/home/test-project/config/randomtext.txt
+            - ssh root@37.46.85.244 'bash -s' < create_folder.sh
+            - rm -r /tmp/$BITBUCKET_BRANCH.tar.gz
+
